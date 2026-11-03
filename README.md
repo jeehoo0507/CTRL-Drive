@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="round1/assets/main.jpg" alt="CTRL DRIVE" width="100%">
+  <img src="assets/main.jpg" alt="CTRL DRIVE" width="100%">
 </p>
 
 # CTRL DRIVE
