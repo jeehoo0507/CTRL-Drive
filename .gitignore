@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.zip
+replay*.mp4
+results.json
+.DS_Store

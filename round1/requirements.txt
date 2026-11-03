@@ -1,0 +1,7 @@
+numpy
+pillow
+imageio
+imageio-ffmpeg
+# PPO 베이스라인(train.py)을 쓸 때만 필요. train_numpy.py 는 numpy만으로 돌아감
+gymnasium
+stable-baselines3
