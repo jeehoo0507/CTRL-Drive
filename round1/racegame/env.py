@@ -22,6 +22,7 @@ MAX_STEPS = 1200      # 60초
 STUCK_STEPS = 60      # 3초 동안 전진이 없으면 종료
 CAR_RADIUS = 9.0      # 장애물 충돌 판정용
 BOUNCE = -0.25        # 장애물에 박으면 속도가 반대로 25% 튕김 (탈락 X, 막히기만)
+PAR_SPEED = 230.0     # 트랙 json에 par_time(기준기록)이 없을 때: 중심선 길이 / 230px/s
 
 
 def resolve_track(name_or_path):
@@ -44,6 +45,9 @@ class RaceEnv:
             self.track = Track(track if isinstance(track, dict) else resolve_track(track))
         self.strat = Strategy(self.track.raw.get("strategy"))   # 전략 모드 (없으면 꺼짐)
         self.max_steps = max_steps * self.strat.laps
+        par = self.track.raw.get("par_time")
+        self.par_time = float(par) if par else \
+            round(self.track.total_length * self.strat.laps / PAR_SPEED, 2)
         self.car = None
 
     # ------------------------------------------------------------------
@@ -133,6 +137,7 @@ class RaceEnv:
             "time": round(self.steps * DT, 2),
             "steps": self.steps,
             "hits": self.hits,                 # 장애물 충돌 횟수 (참고용, 감점 없음)
+            "par_time": self.par_time,         # 이 트랙 기준기록 (채점용)
             **self.strat.info(),
         }
         return self._obs(), float(reward), self.done, self.last_info

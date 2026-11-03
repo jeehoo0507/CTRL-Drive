@@ -11,8 +11,7 @@ import numpy as np
 
 from .env import RaceEnv
 
-FINISH_BASE = 100.0
-TIME_BONUS_FROM = 60.0     # 완주 시 (60 - 기록초) 만큼 보너스
+DNF_WEIGHT = 50.0          # 미완주 점수 = 50 × 진행률
 
 
 def load_agent(path):
@@ -32,10 +31,14 @@ def load_agent(path):
 
 
 def track_score(info):
+    """기록 비율 점수.
+    완주   : 100 × 기준기록 / 내 기록   (기준기록 = 주최측 AI 기록. 더 빠르면 100 넘음)
+    미완주 : 50 × 진행률              (완주하면 기준의 2배 걸려도 50점 → 완주가 항상 유리)
+    """
     if info["finished"]:
-        t = info["time"] - info.get("coin_time", 0.0)          # 전략 트랙: 코인만큼 기록 단축
-        return FINISH_BASE + max(0.0, TIME_BONUS_FROM * info.get("laps", 1) - t)
-    return 100.0 * info["progress"]
+        t = max(info["time"] - info.get("coin_time", 0.0), 1e-6)   # 전략 트랙: 코인만큼 기록 단축
+        return 100.0 * info["par_time"] / t
+    return DNF_WEIGHT * info["progress"]
 
 
 def run_episode(agent, track, seed, on_frame=None):
@@ -74,8 +77,8 @@ def evaluate(agent, tracks, seeds=(0, 1, 2)):
 
 
 def format_table(results):
-    lines = [f"{'track':<12}{'score':>8}  {'finish':>6}  {'best time':>9}  {'avg progress':>12}",
-             "-" * 54]
+    lines = [f"{'track':<16}{'score':>8}  {'finish':>6}  {'best time':>9}  {'par':>7}  {'avg progress':>12}",
+             "-" * 67]
     for name, r in results.items():
         if name == "total":
             continue
@@ -84,6 +87,7 @@ def format_table(results):
         times = [x["time"] for x in runs if x["finished"]]
         best = f"{min(times):.2f}s" if times else "-"
         prog = np.mean([x["progress"] for x in runs]) * 100
-        lines.append(f"{name:<12}{r['score']:>8.2f}  {fin:>3}/{len(runs):<2}  {best:>9}  {prog:>11.1f}%")
-    lines += ["-" * 54, f"{'TOTAL':<12}{results['total']:>8.2f}"]
+        par = f"{runs[0]['par_time']:.2f}s"
+        lines.append(f"{name:<16}{r['score']:>8.2f}  {fin:>3}/{len(runs):<2}  {best:>9}  {par:>7}  {prog:>11.1f}%")
+    lines += ["-" * 67, f"{'TOTAL':<16}{results['total']:>8.2f}"]
     return "\n".join(lines)
